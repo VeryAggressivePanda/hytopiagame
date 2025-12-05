@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "hytopia-mcp": {
+      "url": "https://dev-ai-server-production.up.railway.app/mcp"
+    }
+  }
+}

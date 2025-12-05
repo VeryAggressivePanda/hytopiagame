@@ -1,0 +1,153 @@
+{
+  "version": 1,
+  "textureSize": 24,
+  "padding": 20,
+  "atlasWidth": 256,
+  "atlasHeight": 256,
+  "textures": {
+    "blocks/oak_planks.png": {
+      "u0": 0.078125,
+      "v0": 0.078125,
+      "u1": 0.171875,
+      "v1": 0.171875,
+      "averageRGB": [
+        0.7658564814814814,
+        0.5558142701525054,
+        0.342755991285403
+      ],
+      "isTransparent": false,
+      "needsAlphaTest": false
+    },
+    "blocks/sand.png": {
+      "u0": 0.328125,
+      "v0": 0.078125,
+      "u1": 0.421875,
+      "v1": 0.171875,
+      "averageRGB": [
+        0.9294117647058824,
+        0.8391476034858387,
+        0.6382216775599129
+      ],
+      "isTransparent": false,
+      "needsAlphaTest": false
+    },
+    "blocks/stone-bricks.png": {
+      "u0": 0.578125,
+      "v0": 0.078125,
+      "u1": 0.671875,
+      "v1": 0.171875,
+      "averageRGB": [
+        0.509443082788671,
+        0.509443082788671,
+        0.509443082788671
+      ],
+      "isTransparent": false,
+      "needsAlphaTest": false
+    },
+    "blocks/stone.png": {
+      "u0": 0.828125,
+      "v0": 0.078125,
+      "u1": 0.921875,
+      "v1": 0.171875,
+      "averageRGB": [
+        0.5097426470588236,
+        0.5097426470588236,
+        0.5097426470588236
+      ],
+      "isTransparent": false,
+      "needsAlphaTest": false
+    },
+    "blocks/water.png": {
+      "u0": 0.078125,
+      "v0": 0.328125,
+      "u1": 0.171875,
+      "v1": 0.421875,
+      "averageRGB": [
+        0.2718545751633987,
+        0.6162173202614378,
+        0.951729302832244
+      ],
+      "isTransparent": true,
+      "needsAlphaTest": false
+    },
+    "blocks/water_bright1.png": {
+      "u0": 0.328125,
+      "v0": 0.328125,
+      "u1": 0.421875,
+      "v1": 0.421875,
+      "averageRGB": [
+        0.4489515250544662,
+        0.7397535403050108,
+        1
+      ],
+      "isTransparent": true,
+      "needsAlphaTest": false
+    },
+    "blocks/water_bright2.png": {
+      "u0": 0.578125,
+      "v0": 0.328125,
+      "u1": 0.671875,
+      "v1": 0.421875,
+      "averageRGB": [
+        0.6021377995642702,
+        0.8435593681917212,
+        1
+      ],
+      "isTransparent": true,
+      "needsAlphaTest": false
+    },
+    "blocks/water_light.png": {
+      "u0": 0.828125,
+      "v0": 0.328125,
+      "u1": 0.921875,
+      "v1": 0.421875,
+      "averageRGB": [
+        0.38675789760348583,
+        0.8878472222222222,
+        0.9547453703703704
+      ],
+      "isTransparent": false,
+      "needsAlphaTest": false
+    },
+    "blocks/water_medium.png": {
+      "u0": 0.078125,
+      "v0": 0.578125,
+      "u1": 0.171875,
+      "v1": 0.671875,
+      "averageRGB": [
+        0.19876770152505446,
+        0.5482434640522876,
+        0.7299291938997822
+      ],
+      "isTransparent": false,
+      "needsAlphaTest": false
+    },
+    "blocks/water_sky.png": {
+      "u0": 0.328125,
+      "v0": 0.578125,
+      "u1": 0.421875,
+      "v1": 0.671875,
+      "averageRGB": [
+        0.22512935729847497,
+        0.6705201525054466,
+        0.8473924291938998
+      ],
+      "isTransparent": false,
+      "needsAlphaTest": false
+    },
+    "blocks/wood_beam.png": {
+      "u0": 0.578125,
+      "v0": 0.578125,
+      "u1": 0.671875,
+      "v1": 0.671875,
+      "averageRGB": [
+        0.2669934640522876,
+        0.16548883442265797,
+        0.0960239651416122
+      ],
+      "isTransparent": false,
+      "needsAlphaTest": false
+    }
+  },
+  "sourceHash": "53e6316df33d8fb76b3ad459662d29812d6cacc33ab201094cf6fde7932aeb9d"
+}

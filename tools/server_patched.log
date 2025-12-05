@@ -1,0 +1,237 @@
+
+> game@1.0.0 start
+> hytopia start
+
+Bundled 2 modules in 111ms
+
+  index.mjs  7.0 MB  (entry point)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚨 HYTOPIA PLATFORM GATEWAY IS NOT INITIALIZED 🚨
+
+🔧 Local development is still possible, but these features will be disabled:
+  • 👤 Live Player Accounts
+  • 🎭 Live Player Cosmetics
+  • 🔔 Scheduled Notifications
+  • 🐛 Crash Analytics & Debug Logs
+
+💡 These features will be enabled but modified:
+  • 💾 Player & Global Persisted Data - Data will be persisted
+       locally in the ./dev/persistence directory of your project.
+       Player ids for data persistence will begin at 1 for the first 
+       player to join your local server, and increments for each
+       additional player. This means that if you restart your
+       server, the first player id will be 1 again. This is to ensure
+       that data persistence across server restarts can be easily
+       tested and debugged in local development.
+
+To enable the HYTOPIA Platform Gateway locally:
+  1. Set these environment variables:
+     HYTOPIA_API_KEY, HYTOPIA_GAME_ID, HYTOPIA_LOBBY_ID
+  2. You can find these values at: https://create.hytopia.com
+
+Note: In production, these environment variables will be auto-populated 
+& the HYTOPIA Platform Gateway will automatically be initialized 🚀
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[SaveStates] Couldn't load credentials from environment variables, defaulting to local backend
+Connection: msgpackr native acceleration is not enabled, using fallback implementation.
+using deprecated parameters for the initialization function; pass a single object instead
+
+[31m[1m==========[ RUNTIME ERROR #1 | 2025-11-25T20:31:28.489Z ]==========[0m
+The server encountered an unrecoverable error and has crashed!
+
+[31m[1m⚠️  FATAL ERROR:[0m [1mBlockTextureRegistry.preloadAtlas(): No cached atlas found in production. Run development server to generate atlas.[0m
+[36m🔍 STACK TRACE:[0m
+   at [32mn.fatalError[0m (file:///Users/dwoertman/Documents/Cursor/game/index.mjs:52554:13)
+   at [32meQ.preloadAtlas[0m (file:///Users/dwoertman/Documents/Cursor/game/index.mjs:66286:9)
+[31m[1m=================================================[0m
+
+
+[31m[1m==========[ RUNTIME ERROR #2 | 2025-11-25T20:31:28.490Z ]==========[0m
+The server encountered an unrecoverable error and has crashed!
+
+[31m[1m⚠️  FATAL ERROR:[0m [1mFailed to initialize the game engine, exiting. Error: Error: BlockTextureRegistry.preloadAtlas(): No cached atlas found in production. Run development server to generate atlas.[0m
+[36m🔍 STACK TRACE:[0m
+   at [32mn.fatalError[0m (file:///Users/dwoertman/Documents/Cursor/game/index.mjs:52554:13)
+   at [32mfile:///Users/dwoertman/Documents/Cursor/game/index.mjs:95357:7[0m
+[31m[1m=================================================[0m
+
+node:internal/process/promises:394
+    triggerUncaughtException(err, true /* fromPromise */);
+    ^
+
+Error: Failed to initialize the game engine, exiting. Error: Error: BlockTextureRegistry.preloadAtlas(): No cached atlas found in production. Run development server to generate atlas.
+    at n.fatalError (file:///Users/dwoertman/Documents/Cursor/game/index.mjs:52554:13)
+    at file:///Users/dwoertman/Documents/Cursor/game/index.mjs:95357:7
+
+Node.js v22.14.0
+Bundled 2 modules in 106ms
+
+  index.mjs  7.0 MB  (entry point)
+
+node:internal/modules/cjs/loader:1225
+  const err = new Error(message);
+              ^
+
+Error: Cannot find module '@hytopia.com/assets'
+Require stack:
+- /Users/dwoertman/Documents/Cursor/game/index.mjs
+    at Function._resolveFilename (node:internal/modules/cjs/loader:1225:15)
+    at Function.resolve (node:internal/modules/helpers:146:19)
+    at file:///Users/dwoertman/Documents/Cursor/game/index.mjs:52587:64
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:116:5) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [ '/Users/dwoertman/Documents/Cursor/game/index.mjs' ]
+}
+
+Node.js v22.14.0
+Bundled 2 modules in 111ms
+
+  index.mjs  7.0 MB  (entry point)
+
+node:internal/modules/cjs/loader:1225
+  const err = new Error(message);
+              ^
+
+Error: Cannot find module '@hytopia.com/assets'
+Require stack:
+- /Users/dwoertman/Documents/Cursor/game/index.mjs
+    at Function._resolveFilename (node:internal/modules/cjs/loader:1225:15)
+    at Function.resolve (node:internal/modules/helpers:146:19)
+    at file:///Users/dwoertman/Documents/Cursor/game/index.mjs:52587:64
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:116:5) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [ '/Users/dwoertman/Documents/Cursor/game/index.mjs' ]
+}
+
+Node.js v22.14.0
+Bundled 2 modules in 101ms
+
+  index.mjs  7.0 MB  (entry point)
+
+node:internal/modules/cjs/loader:1225
+  const err = new Error(message);
+              ^
+
+Error: Cannot find module '@hytopia.com/assets'
+Require stack:
+- /Users/dwoertman/Documents/Cursor/game/index.mjs
+    at Function._resolveFilename (node:internal/modules/cjs/loader:1225:15)
+    at Function.resolve (node:internal/modules/helpers:146:19)
+    at file:///Users/dwoertman/Documents/Cursor/game/index.mjs:52587:64
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:116:5) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [ '/Users/dwoertman/Documents/Cursor/game/index.mjs' ]
+}
+
+Node.js v22.14.0
+Bundled 2 modules in 157ms
+
+  index.mjs  7.0 MB  (entry point)
+
+node:internal/modules/cjs/loader:1225
+  const err = new Error(message);
+              ^
+
+Error: Cannot find module '@hytopia.com/assets'
+Require stack:
+- /Users/dwoertman/Documents/Cursor/game/index.mjs
+    at Function._resolveFilename (node:internal/modules/cjs/loader:1225:15)
+    at Function.resolve (node:internal/modules/helpers:146:19)
+    at file:///Users/dwoertman/Documents/Cursor/game/index.mjs:52587:64
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:116:5) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [ '/Users/dwoertman/Documents/Cursor/game/index.mjs' ]
+}
+
+Node.js v22.14.0
+Bundled 2 modules in 184ms
+
+  index.mjs  7.0 MB  (entry point)
+
+node:internal/modules/cjs/loader:1225
+  const err = new Error(message);
+              ^
+
+Error: Cannot find module '@hytopia.com/assets'
+Require stack:
+- /Users/dwoertman/Documents/Cursor/game/index.mjs
+    at Function._resolveFilename (node:internal/modules/cjs/loader:1225:15)
+    at Function.resolve (node:internal/modules/helpers:146:19)
+    at file:///Users/dwoertman/Documents/Cursor/game/index.mjs:52587:64
+    at ModuleJob.run (node:internal/modules/esm/module_job:271:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:578:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:116:5) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [ '/Users/dwoertman/Documents/Cursor/game/index.mjs' ]
+}
+
+Node.js v22.14.0
+Bundled 2 modules in 278ms
+
+  index.mjs  7.0 MB  (entry point)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚨 HYTOPIA PLATFORM GATEWAY IS NOT INITIALIZED 🚨
+
+🔧 Local development is still possible, but these features will be disabled:
+  • 👤 Live Player Accounts
+  • 🎭 Live Player Cosmetics
+  • 🔔 Scheduled Notifications
+  • 🐛 Crash Analytics & Debug Logs
+
+💡 These features will be enabled but modified:
+  • 💾 Player & Global Persisted Data - Data will be persisted
+       locally in the ./dev/persistence directory of your project.
+       Player ids for data persistence will begin at 1 for the first 
+       player to join your local server, and increments for each
+       additional player. This means that if you restart your
+       server, the first player id will be 1 again. This is to ensure
+       that data persistence across server restarts can be easily
+       tested and debugged in local development.
+
+To enable the HYTOPIA Platform Gateway locally:
+  1. Set these environment variables:
+     HYTOPIA_API_KEY, HYTOPIA_GAME_ID, HYTOPIA_LOBBY_ID
+  2. You can find these values at: https://create.hytopia.com
+
+Note: In production, these environment variables will be auto-populated 
+& the HYTOPIA Platform Gateway will automatically be initialized 🚀
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[SaveStates] Couldn't load credentials from environment variables, defaulting to local backend
+Connection: msgpackr native acceleration is not enabled, using fallback implementation.
+using deprecated parameters for the initialization function; pass a single object instead
+BlockTextureRegistry.preloadAtlas(): Generating atlas for 165 block textures...
+BlockTextureRegistry.preloadAtlas(): Successfully created block texture atlas (1024x1024)
+ModelRegistry.preloadModels(): Preloading 647 models...
+ModelRegistry.preloadModels(): Preloaded 647 models in 411.00245899999936ms!
+
+[31m[1m==========[ RUNTIME ERROR #1 | 2025-11-26T10:04:03.567Z ]==========[0m
+The server encountered an unrecoverable error and has crashed!
+
+[31m[1m⚠️  FATAL ERROR:[0m [1mFailed to initialize the game engine, exiting. Error: TypeError: {(intermediate value)(intermediate value)(intermediate value)(intermediate value)}[$] is not a function[0m
+[36m🔍 STACK TRACE:[0m
+   at [32mn.fatalError[0m (file:///Users/dwoertman/Documents/Cursor/game/index.mjs:52554:13)
+   at [32mfile:///Users/dwoertman/Documents/Cursor/game/index.mjs:95357:7[0m
+[31m[1m=================================================[0m
+
+node:internal/process/promises:394
+    triggerUncaughtException(err, true /* fromPromise */);
+    ^
+
+Error: Failed to initialize the game engine, exiting. Error: TypeError: {(intermediate value)(intermediate value)(intermediate value)(intermediate value)}[$] is not a function
+    at n.fatalError (file:///Users/dwoertman/Documents/Cursor/game/index.mjs:52554:13)
+    at file:///Users/dwoertman/Documents/Cursor/game/index.mjs:95357:7
+
+Node.js v22.14.0
+👋 Shutting down...
