@@ -1,129 +1,441 @@
-<style>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Raft UI</title>
+  <style>
+  body {
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    color: white;
+    background: transparent;
+  }
   .controls-panel {
     position: fixed;
+    left: 20px;
     top: 20px;
-    right: 20px;
-    background: rgba(0, 0, 0, 0.8);
-    padding: 20px;
-    border-radius: 8px;
-    color: white;
-    font-family: 'Inter', sans-serif;
-    width: 250px;
-    pointer-events: auto;
-    z-index: 1000;
+    width: 240px;
+    padding: 12px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.55);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+    z-index: 900;
   }
-  
+  .controls-panel h3 {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    letter-spacing: 0.3px;
+  }
   .control-group {
-    margin-bottom: 15px;
+    margin-bottom: 10px;
   }
-  
   .control-group label {
     display: block;
-    margin-bottom: 5px;
     font-size: 12px;
-    color: #aaa;
+    margin-bottom: 4px;
   }
-  
   .control-group input[type="range"] {
     width: 100%;
-    margin: 0;
   }
-  
   .value-display {
     float: right;
-    color: #4CAF50;
+    font-size: 11px;
+    color: #b0e2ff;
   }
-</style>
 
-<div class="controls-panel">
-  <h3>Raft Controls</h3>
+  .minimap-wrapper {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    width: 220px;
+    height: 220px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.6);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 900;
+  }
+  .minimap-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
 
-  <div class="control-group">
-    <label>Drift Speed <span id="val-raft-speed" class="value-display">2.0</span></label>
-    <input type="range" id="input-raft-speed" min="0" max="2" step="0.05" value="2">
+  /* Music toggle */
+  .music-toggle {
+    position: fixed;
+    right: 20px;
+    top: 20px;
+    padding: 8px 12px;
+    background: rgba(0,0,0,0.7);
+    color: #e8f7ff;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 10px;
+    font-size: 12px;
+    cursor: pointer;
+    z-index: 950;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+  }
+  .music-toggle:hover {
+    background: rgba(0,0,0,0.85);
+  }
+
+  /* Background music element stays hidden */
+  #bgm {
+    display: none;
+  }
+  </style>
+
+  <style>
+  /* Swim energy bar */
+  .swim-bar {
+    position: fixed;
+    left: 20px;
+    bottom: 24px;
+    width: 220px;
+    height: 16px;
+    background: rgba(0,0,0,0.55);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+    pointer-events: none;
+    z-index: 950;
+  }
+  .swim-bar-fill {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, #3cd2ff, #2ca0ff);
+    transition: width 0.12s ease;
+  }
+  .swim-bar.low .swim-bar-fill {
+    background: linear-gradient(90deg, #ff6b6b, #ff2d2d);
+  }
+  .swim-bar-text {
+    position: absolute;
+    top: 50%;
+    left: 10px;
+    transform: translateY(-50%);
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.3px;
+    color: #e8f7ff;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+    pointer-events: none;
+  }
+
+  /* Inventory toast and list */
+  .inventory-toast {
+    display: none; /* DISABLED for stability */
+  }
+  .inventory-list {
+    display: none; /* DISABLED for stability */
+  }
+  </style>
+</head>
+<body>
+  <div class="controls-panel">
+    <h3>Raft Controls</h3>
+
+    <div class="control-group">
+      <label>Drift Speed <span id="val-raft-speed" class="value-display">2.0</span></label>
+      <input type="range" id="input-raft-speed" min="0" max="2" step="0.05" value="2">
+    </div>
+
+    <div class="control-group">
+    </div>
   </div>
 
-  <div class="control-group">
+  <div class="swim-bar" id="swim-bar">
+    <div class="swim-bar-fill" id="swim-bar-fill"></div>
+    <div class="swim-bar-text">Swim</div>
   </div>
-</div>
+
+  <div class="inventory-list" id="inventory-list">
+    <h4>Inventory</h4>
+    <ul id="inventory-items"></ul>
+  </div>
+
+  <div class="inventory-toast" id="inventory-toast"></div>
+
+  <div class="minimap-wrapper">
+    <canvas id="minimap" class="minimap-canvas" width="220" height="220"></canvas>
+    <!-- Music is served via the CDN placeholder so it works locally and in prod -->
+    <audio id="bgm" src="{{CDN_ASSETS_URL}}/audio/sfx/background/Endless%20Horizon.mp3" loop preload="auto">
+      <source src="{{CDN_ASSETS_URL}}/audio/sfx/background/Endless%20Horizon.mp3" type="audio/mpeg">
+    </audio>
+  </div>
+  <button id="music-toggle" class="music-toggle">Music: off</button>
 
 <script>
-  // Initialize controls safely after DOM is ready
+  // Initialize controls + minimap safely after DOM is ready
   (function() {
     function updatePhysics(type, value) {
-      // Update display value
-      const displayMap = {
-        'raft-speed': 'val-raft-speed',
-      };
-      
+      const displayMap = { 'raft-speed': 'val-raft-speed' };
       const displayEl = document.getElementById(displayMap[type]);
-      if (displayEl) {
-          displayEl.textContent = value;
-      }
+      if (displayEl) displayEl.textContent = value;
 
-      // Send to server safely
       if (window.hytopia) {
-          try {
-              hytopia.sendData({
-                  type: 'physics-update',
-                  param: type,
-                  value: parseFloat(value)
-              });
-          } catch (e) {
-              console.error('Error sending physics update:', e);
-          }
-      }
-    }
-
-    // Listen for debug data from server
-    function setupDebugListener() {
-      if (window.hytopia) {
-        // Set up onData listener for incoming server messages
-        hytopia.onData = function(data) {
-          if (data.type === 'debug-info') {
-            const logLine = data.message || `[debug-info] y=${data.y} vel.y=${data.vely} liquid=${data.liquid} g=${data.gravity}`;
-            console.log('[RAFT]', logLine);
-
-            const el1 = document.getElementById('debug-y');
-            const el2 = document.getElementById('debug-vely');
-            const el3 = document.getElementById('debug-liquid');
-            const el4 = document.getElementById('debug-gravity');
-            if (el1) el1.textContent = data.y;
-            if (el2) el2.textContent = data.vely;
-            if (el3) el3.textContent = data.liquid;
-            if (el4) el4.textContent = data.gravity;
-          }
-        };
-        console.log('[UI] Debug listener set up!');
-      } else {
-        console.log('[UI] hytopia not ready yet, retrying...');
-      }
-    }
-    setTimeout(setupDebugListener, 100);
-    setTimeout(setupDebugListener, 500);
-    setTimeout(setupDebugListener, 1000);
-    setTimeout(setupDebugListener, 2000);
-
-    // Attach listeners dynamically to avoid inline script scope issues
-    function attachListeners() {
-      const inputs = {
-        'raft-speed': 'input-raft-speed',
-      };
-
-      for (const [type, id] of Object.entries(inputs)) {
-        const el = document.getElementById(id);
-        if (el) {
-          el.oninput = function(e) {
-            updatePhysics(type, e.target.value);
-          };
+        try {
+          hytopia.sendData({ type: 'physics-update', param: type, value: parseFloat(value) });
+        } catch (e) {
+          console.error('Error sending physics update:', e);
         }
       }
     }
 
-    // Try attaching immediately and then retry just in case
+    // Notify ready early
+    function notifyReady() {
+      if (window.hytopia && typeof hytopia.sendData === 'function') {
+        try { hytopia.sendData({ type: 'ui-ready', scope: 'swim' }); } catch (e) {}
+      }
+    }
+    notifyReady();
+
+    // Audio setup (BGM) - default OFF; toggle button controls
+    const audioEl = document.getElementById('bgm');
+    const musicBtn = document.getElementById('music-toggle');
+    let musicOn = false;
+    function updateMusicUi() {
+      if (musicBtn) musicBtn.textContent = musicOn ? 'Music: on' : 'Music: off';
+    }
+    function toggleMusic() {
+      if (!(audioEl instanceof HTMLAudioElement)) return;
+      musicOn = !musicOn;
+      updateMusicUi();
+      if (musicOn) {
+        audioEl.play().catch(err => {
+          console.warn('[UI] BGM play blocked', err);
+          musicOn = false;
+          updateMusicUi();
+        });
+      } else {
+        audioEl.pause();
+        audioEl.currentTime = 0;
+      }
+    }
+    if (audioEl instanceof HTMLAudioElement) {
+      const bgmSrc = '{{CDN_ASSETS_URL}}/audio/sfx/background/Endless%20Horizon.mp3';
+      audioEl.src = bgmSrc;
+      audioEl.preload = 'auto';
+      audioEl.volume = 0.18;
+    }
+    if (musicBtn) {
+      musicBtn.addEventListener('click', toggleMusic);
+      updateMusicUi();
+    }
+
+    const minimap = {
+      canvas: document.getElementById('minimap'),
+      ctx: null,
+      data: null,
+      lastUpdate: 0,
+    };
+
+    if (minimap.canvas) {
+      minimap.ctx = minimap.canvas.getContext('2d');
+    }
+
+    function drawMinimap() {
+      const ctx = minimap.ctx;
+      if (!ctx) return requestAnimationFrame(drawMinimap);
+
+      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+      ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+      const data = minimap.data;
+      if (!data) {
+        ctx.fillStyle = '#ccc';
+        ctx.font = '12px Inter';
+        ctx.fillText('Minimap loading...', 20, 20);
+        return requestAnimationFrame(drawMinimap);
+      }
+
+      const R = 100; // render radius in pixels
+      const viewRadius = 45;
+      const scale = R / viewRadius;
+      const center = { x: ctx.canvas.width / 2, y: ctx.canvas.height / 2 };
+      const worldToCanvas = (wx, wz) => ({
+        x: center.x + (wx - data.center.x) * scale,
+        y: center.y + (wz - data.center.z) * scale,
+      });
+
+      // border
+      ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, R, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // drift arrow
+      if (data.drift) {
+        const dir = data.drift;
+        const len = 20;
+        const base = { x: center.x, y: center.y };
+        const tip = { x: base.x + dir.x * len, y: base.y + dir.z * len };
+        ctx.strokeStyle = 'rgba(180,230,255,0.8)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(base.x, base.y);
+        ctx.lineTo(tip.x, tip.y);
+        ctx.stroke();
+      }
+
+      // islands: draw exact water-level blocks only
+      if (Array.isArray(data.islands)) {
+        const cell = (1 / viewRadius) * R;
+        ctx.strokeStyle = 'rgba(255, 230, 140, 0.9)';
+        ctx.fillStyle = 'rgba(255, 220, 120, 0.7)';
+        ctx.lineWidth = 1;
+        data.islands.forEach(is => {
+          const hasBlocks = Array.isArray(is.waterBlocks) && is.waterBlocks.length > 0;
+          if (hasBlocks) {
+            is.waterBlocks.forEach(b => {
+              const p = worldToCanvas(b.x, b.z);
+              ctx.fillRect(p.x - cell / 2, p.y - cell / 2, cell, cell);
+            });
+            is.waterBlocks.forEach(b => {
+              const p = worldToCanvas(b.x, b.z);
+              ctx.strokeRect(p.x - cell / 2, p.y - cell / 2, cell, cell);
+            });
+            return;
+          }
+        });
+      }
+
+      // shark
+      if (data.shark) {
+        const s = worldToCanvas(data.shark.x, data.shark.z);
+        ctx.fillStyle = 'rgba(255,80,80,0.9)';
+        ctx.beginPath(); ctx.arc(s.x, s.y, 5, 0, Math.PI * 2); ctx.fill();
+      }
+
+      // player/raft center
+      const me = worldToCanvas(data.center.x, data.center.z);
+      ctx.fillStyle = '#7CFC00';
+      ctx.beginPath(); ctx.arc(me.x, me.y, 5, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(me.x, me.y, 8, 0, Math.PI * 2); ctx.stroke();
+
+      requestAnimationFrame(drawMinimap);
+    }
+
+    // Listen for server data (debug + minimap) with handler chaining; keep re-attaching in case engine overwrites onData
+    let listenerAttached = false;
+    let onDataKeepalive = null;
+    let warnedNoData = false;
+    let warnedStale = false;
+    const handleData = function(data) {
+      if (!data || !data.type) return;
+      if (data.type === 'debug-info') {
+        const logLine = data.message || `[debug-info] y=${data.y} vel.y=${data.vely} liquid=${data.liquid} g=${data.gravity}`;
+        console.log('[RAFT]', logLine);
+        const el1 = document.getElementById('debug-y');
+        const el2 = document.getElementById('debug-vely');
+        const el3 = document.getElementById('debug-liquid');
+        const el4 = document.getElementById('debug-gravity');
+        if (el1) el1.textContent = data.y;
+        if (el2) el2.textContent = data.vely;
+        if (el3) el3.textContent = data.liquid;
+        if (el4) el4.textContent = data.gravity;
+        return;
+      }
+      if (data.type === 'minimap') {
+        minimap.data = {
+          center: data.center || { x: 0, z: 0 },
+          drift: data.drift || { x: 0, z: 0 },
+          islands: Array.isArray(data.islands) ? data.islands : [],
+          shark: data.shark,
+          fish: Array.isArray(data.fish) ? data.fish : [],
+        };
+        minimap.lastUpdate = performance.now();
+        console.log('[UI] Minimap update', minimap.data);
+        return;
+      }
+      if (data.type === 'swim-energy') {
+        const bar = document.getElementById('swim-bar');
+        const fill = document.getElementById('swim-bar-fill');
+        if (bar && fill) {
+          const v = Math.max(0, Math.min(1, data.value ?? 0));
+          fill.style.width = `${v * 100}%`;
+          if (v < 0.25) bar.classList.add('low'); else bar.classList.remove('low');
+          bar.style.opacity = v >= 0.999 ? '0.15' : '1';
+        }
+        console.log('[UI] swim-energy', data);
+        return;
+      }
+      // inventory and popup disabled for now
+    };
+    const uiHandler = handleData;
+
+    function attachListener() {
+      if (!window.hytopia) return false;
+      if (listenerAttached) return true;
+      try {
+        // hytopia.onData(cb) registers; returns nothing in current SDK
+        hytopia.onData(uiHandler);
+        listenerAttached = true;
+        console.log('[UI] Listener attached');
+        return true;
+      } catch (e) {
+        console.warn('[UI] Failed to attach hytopia.onData', e);
+        return false;
+      }
+    }
+
+    // Fallback: also listen for postMessage events (in case engine posts instead of onData)
+    window.addEventListener('message', ev => {
+      try { handleData(ev.data); } catch (e) { console.warn('postMessage handler err', e); }
+    });
+
+    function ensureListener() {
+      if (!attachListener()) return false;
+      if (!onDataKeepalive) {
+        // Re-assert every 2s in case something overwrites hytopia.onData
+        onDataKeepalive = setInterval(() => attachListener(), 2000);
+      }
+      return true;
+    }
+
+    // Retry until hytopia exists
+    (function waitForHytopia() {
+      if (ensureListener()) return;
+      setTimeout(waitForHytopia, 300);
+    })();
+
+    // Watchdog: log if no minimap data arrives or goes stale
+    setInterval(() => {
+      const age = performance.now() - minimap.lastUpdate;
+      if (!minimap.data && !warnedNoData) {
+        warnedNoData = true;
+        console.warn('[UI] Waiting for minimap packets... hytopia present?', !!window.hytopia);
+      }
+      if (minimap.data && age > 4000 && !warnedStale) {
+        warnedStale = true;
+        console.warn('[UI] Minimap data stale (>4s old). Checking listener...');
+        ensureListener();
+      }
+    }, 1500);
+
+    // Attach listeners for inputs
+    function attachListeners() {
+      const inputs = { 'raft-speed': 'input-raft-speed' };
+      for (const [type, id] of Object.entries(inputs)) {
+        const el = document.getElementById(id);
+        if (el) {
+          el.oninput = e => updatePhysics(type, e.target.value);
+        }
+      }
+    }
     attachListeners();
     setTimeout(attachListeners, 500);
     setTimeout(attachListeners, 1000);
+
+    requestAnimationFrame(drawMinimap);
   })();
 </script>
 
@@ -183,36 +495,29 @@
     gap: 14px;
     position: fixed;
     bottom: 40px;
-    right: 40px;
+    left: 50%;
+    transform: translateX(-50%);
   }
 
   .mobile-button {
-    background-color: rgba(0, 0, 0, 0.5);
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
-    align-items: center;
-    justify-content: center;
-    display: flex;
-    width: 50px;
-    height: 50px;
-    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-    will-change: transform, background-color;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    font-family: 'Inter', sans-serif;
-    font-size: 14px;
-    font-weight: bold;
-    color: rgba(255, 255, 255, 0.8);
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-    pointer-events: auto !important;
+    background: rgba(0,0,0,0.55);
+    display: grid;
+    place-items: center;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+    border: 1px solid rgba(255,255,255,0.2);
   }
-  
+
   .mobile-button img {
-    width: 22px;
-    height: 22px;
+    width: 32px;
+    height: 32px;
   }
 
   .mobile-button.active {
-    transform: scale(0.92);
-    background-color: rgba(0, 0, 0, 0.75);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
-  }  
+    background: rgba(0, 150, 255, 0.6);
+  }
 </style>
+</body>
+</html>
