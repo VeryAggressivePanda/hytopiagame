@@ -800,8 +800,8 @@ startServer(world => {
             type: RigidBodyType.DYNAMIC,
             additionalMass: 5,
             linearDamping: 0.6,
-            angularDamping: 0.6,
-            enabledRotations: { x: true, y: true, z: true },
+            angularDamping: 8,
+            enabledRotations: { x: false, y: true, z: false }, // lock roll/pitch to keep level
             colliders: [{
               shape: ColliderShape.BLOCK,
               halfExtents: { x: 0.5, y: 0.5, z: raftLength / 2 },
@@ -1148,12 +1148,12 @@ startServer(world => {
           if (vel.y < SWIM_MAX_FALL_SPEED) block.setLinearVelocity({ x: vel.x, y: SWIM_MAX_FALL_SPEED, z: vel.z });
           block.applyImpulse({ x: 0, y: impulseY + buoyancyImpulse, z: 0 });
           block.setLinearDamping(Math.max(physicsParams.linearDamping, 2));
-          block.setAngularDamping(Math.max(physicsParams.angularDamping, 2));
+          block.setAngularDamping(8); // high angular damping in water to avoid tilting
           block.wakeUp();
         } else {
           block.setGravityScale(1.0);
           block.setLinearDamping(0.5);
-          block.setAngularDamping(0.5);
+          block.setAngularDamping(2.0); // some damping above water to stay stable
         }
 
         // Apply slow drift velocity target
