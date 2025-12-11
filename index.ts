@@ -706,11 +706,11 @@ startServer(world => {
     };
 
     const centerlineLateral = (t: number) => {
+      // Continuous phase (no per-segment jumps)
       const AMP = 4;
       const FREQ = 0.15;
       const PHASE = 0.4;
-      const segIdx = Math.floor(t / BANK_SEG_LEN);
-      const phaseBase = segIdx * 0.6;
+      const phaseBase = (t / BANK_SEG_LEN) * 0.6; // smooth progression
       return Math.sin(t * FREQ + phaseBase + PHASE) * AMP;
     };
 
@@ -739,9 +739,10 @@ startServer(world => {
       const AMP = 4;
       const FREQ = 0.15;
       const PHASE = 0.4;
-      const segIdx = Math.floor(t / BANK_SEG_LEN);
-      const phaseBase = segIdx * 0.6;
-      const dLat_dt = Math.cos(t * FREQ + phaseBase + PHASE) * AMP * FREQ; // derivative
+      const phaseBase = (t / BANK_SEG_LEN) * 0.6; // match centerlineLateral
+      const angle = t * FREQ + phaseBase + PHASE;
+      const totalFreq = FREQ + 0.6 / BANK_SEG_LEN; // derivative of phaseBase term
+      const dLat_dt = Math.cos(angle) * AMP * totalFreq; // derivative
       // Tangent = forward + dLat_dt * perp
       let tx = channelForward.x + channelPerp.x * dLat_dt;
       let tz = channelForward.z + channelPerp.z * dLat_dt;
