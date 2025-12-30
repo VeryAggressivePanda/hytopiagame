@@ -92,21 +92,52 @@
   <audio id="bgm" loop preload="auto">
     <source src="{{CDN_ASSETS_URL}}/audio/sfx/background/EndlessHorizon.mp3" type="audio/mpeg">
   </audio>
+  <audio id="bgm-water" loop preload="auto">
+    <source src="{{CDN_ASSETS_URL}}/audio/sfx/background/waterswooshes.mp3" type="audio/mpeg">
+  </audio>
 
   <script>
     (function () {
       const audio = document.getElementById('bgm');
+      const waterAudio = document.getElementById('bgm-water');
       const musicBtn = document.getElementById('music-toggle');
       let musicOn = false;
 
       musicBtn.onclick = () => {
         musicOn = !musicOn;
         musicBtn.innerText = `Music: ${musicOn ? 'On' : 'Off'}`;
-        if (musicOn) audio.play(); else audio.pause();
+        if (musicOn) {
+          audio.play();
+          waterAudio.play();
+        } else {
+          audio.pause();
+          waterAudio.pause();
+        }
       };
 
 
       const minimap = { canvas: document.getElementById('minimap'), ctx: document.getElementById('minimap').getContext('2d'), data: null };
+
+      function sendCollect(source) {
+        if (!window.hytopia) return;
+        if (typeof window.hytopia.sendData === 'function') {
+          window.hytopia.sendData({ type: 'collect', source });
+          console.log('[COLLECT][UI] click sent');
+        } else if (typeof window.hytopia.pressInput === 'function') {
+          window.hytopia.pressInput('ml', true);
+          setTimeout(() => window.hytopia.pressInput('ml', false), 0);
+        }
+      }
+
+      function shouldIgnoreCollect(target) {
+        if (!target || typeof target.closest !== 'function') return false;
+        return !!target.closest('#music-toggle');
+      }
+
+      window.addEventListener('pointerdown', e => {
+        if (shouldIgnoreCollect(e.target)) return;
+        sendCollect('pointer');
+      });
 
       function render() {
         requestAnimationFrame(render);
@@ -135,6 +166,9 @@
         if (e.data.type === 'minimap') minimap.data = e.data;
         if (e.data.type === 'swim-energy') {
           document.getElementById('swim-bar-fill').style.width = (e.data.value * 100) + '%';
+        }
+        if (e.data?.type === 'collect-ack') {
+          console.log('[COLLECT][UI] ACK from server', e.data);
         }
       });
 

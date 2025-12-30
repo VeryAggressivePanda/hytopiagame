@@ -96,11 +96,24 @@
       "isTransparent": true,
       "needsAlphaTest": false
     },
-    "blocks/water_light.png": {
+    "blocks/water_bright_outer.png": {
       "u0": 0.828125,
       "v0": 0.328125,
       "u1": 0.921875,
       "v1": 0.421875,
+      "averageRGB": [
+        0.5174496187363834,
+        0.7913875272331156,
+        0.9529411764705882
+      ],
+      "isTransparent": true,
+      "needsAlphaTest": false
+    },
+    "blocks/water_light.png": {
+      "u0": 0.078125,
+      "v0": 0.578125,
+      "u1": 0.171875,
+      "v1": 0.671875,
       "averageRGB": [
         0.38675789760348583,
         0.8878472222222222,
@@ -110,9 +123,9 @@
       "needsAlphaTest": false
     },
     "blocks/water_medium.png": {
-      "u0": 0.078125,
+      "u0": 0.328125,
       "v0": 0.578125,
-      "u1": 0.171875,
+      "u1": 0.421875,
       "v1": 0.671875,
       "averageRGB": [
         0.19876770152505446,
@@ -123,9 +136,9 @@
       "needsAlphaTest": false
     },
     "blocks/water_sky.png": {
-      "u0": 0.328125,
+      "u0": 0.578125,
       "v0": 0.578125,
-      "u1": 0.421875,
+      "u1": 0.671875,
       "v1": 0.671875,
       "averageRGB": [
         0.22512935729847497,
@@ -136,9 +149,9 @@
       "needsAlphaTest": false
     },
     "blocks/wood_beam.png": {
-      "u0": 0.578125,
+      "u0": 0.828125,
       "v0": 0.578125,
-      "u1": 0.671875,
+      "u1": 0.921875,
       "v1": 0.671875,
       "averageRGB": [
         0.2669934640522876,
@@ -149,5 +162,5 @@
       "needsAlphaTest": false
     }
   },
-  "sourceHash": "53e6316df33d8fb76b3ad459662d29812d6cacc33ab201094cf6fde7932aeb9d"
+  "sourceHash": "4f01fc4175f86eff6c218ecb0c515eeceea952b270fe95cef8e2b93103b5b5fe"
 }
