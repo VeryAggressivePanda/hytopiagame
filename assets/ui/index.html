@@ -13,6 +13,32 @@
       background: transparent;
     }
 
+    .death-screen {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(0, 0, 0, .95);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .8s ease;
+      z-index: 1200;
+    }
+
+    .death-screen.active {
+      opacity: 1;
+    }
+
+    .death-message {
+      max-width: 720px;
+      text-align: center;
+      font-size: 20px;
+      letter-spacing: .4px;
+      line-height: 1.5;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, .6);
+    }
 
     .swim-bar {
       position: fixed;
@@ -20,8 +46,8 @@
       bottom: 24px;
       width: 220px;
       height: 16px;
-      background: rgba(0, 0, 0, 0.55);
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(0, 0, 0, .55);
+      border: 1px solid rgba(255, 255, 255, .2);
       border-radius: 10px;
       overflow: hidden;
       z-index: 950;
@@ -31,7 +57,7 @@
       height: 100%;
       width: 100%;
       background: linear-gradient(90deg, #3cd2ff, #2ca0ff);
-      transition: width 0.1s linear;
+      transition: width .1s linear;
     }
 
     .swim-bar-text {
@@ -44,14 +70,66 @@
       letter-spacing: 1px;
     }
 
+    .coin-counter {
+      position: fixed;
+      left: 20px;
+      bottom: 56px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      background: rgba(0, 0, 0, .6);
+      border: 1px solid rgba(255, 255, 255, .2);
+      border-radius: 10px;
+      z-index: 920;
+      font-size: 12px;
+      letter-spacing: .5px;
+      text-shadow: 0 1px 6px rgba(0, 0, 0, .6);
+      user-select: none;
+      -webkit-user-select: none;
+      pointer-events: none;
+    }
+
+    .coin-icon {
+      position: relative;
+      width: 22px;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .coin-frame {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      opacity: 0;
+    }
+
+    .coin-frame.active {
+      opacity: 1;
+    }
+
+    .coin-count {
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
     .minimap-wrapper {
       position: fixed;
       right: 20px;
       bottom: 20px;
       width: 200px;
       height: 200px;
-      border-radius: 12px;
-      background: rgba(0, 0, 0, 0.6);
+      border-radius: 50%;
+      /* Make it a circle */
+      background: rgba(0, 20, 0, 0.8);
+      /* Dark green radar theme */
+      border: 2px solid rgba(0, 255, 0, 0.3);
+      box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
       overflow: hidden;
       z-index: 900;
     }
@@ -66,13 +144,36 @@
       right: 20px;
       top: 20px;
       padding: 6px 12px;
-      background: rgba(0, 0, 0, 0.7);
+      background: rgba(0, 0, 0, .7);
       color: white;
-      border: 1px solid rgba(255, 255, 255, 0.3);
+      border: 1px solid rgba(255, 255, 255, .3);
       border-radius: 8px;
       font-size: 12px;
       cursor: pointer;
-      z-index: 1000;
+      z-index: 999999;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+      pointer-events: auto;
+    }
+
+    .music-status {
+      position: fixed;
+      right: 20px;
+      top: 52px;
+      max-width: 260px;
+      padding: 6px 8px;
+      background: rgba(0, 0, 0, .6);
+      border: 1px solid rgba(255, 255, 255, .2);
+      border-radius: 6px;
+      font-size: 10px;
+      line-height: 1.3;
+      color: rgba(255, 255, 255, .8);
+      z-index: 999999;
+      user-select: none;
+      -webkit-user-select: none;
+      pointer-events: none;
+      white-space: pre-line;
     }
   </style>
 </head>
@@ -83,96 +184,473 @@
     <div class="swim-bar-fill" id="swim-bar-fill"></div>
     <div class="swim-bar-text">Swim Recovery</div>
   </div>
+  <div class="coin-counter" id="coin-counter">
+    <div class="coin-icon" id="coin-animate-container"></div>
+    <div class="coin-count" id="coin-count">0</div>
+  </div>
 
   <div class="minimap-wrapper">
     <canvas id="minimap" class="minimap-canvas" width="200" height="200"></canvas>
   </div>
 
-  <button id="music-toggle" class="music-toggle">Music: Off</button>
+  <button id="music-toggle" class="music-toggle" type="button">Music: Off</button>
+  <div id="music-status" class="music-status">Music: idle</div>
+
+  <div id="death-screen" class="death-screen" aria-hidden="true">
+    <div id="death-message" class="death-message"></div>
+  </div>
+
   <audio id="bgm" loop preload="auto">
-    <source src="{{CDN_ASSETS_URL}}/audio/sfx/background/EndlessHorizon.mp3" type="audio/mpeg">
+    <source type="audio/mpeg">
   </audio>
   <audio id="bgm-water" loop preload="auto">
-    <source src="{{CDN_ASSETS_URL}}/audio/sfx/background/waterswooshes.mp3" type="audio/mpeg">
+    <source type="audio/mpeg">
   </audio>
 
   <script>
+    window.CDN_ASSETS_URL = "https://local.hytopiahosting.com:8080";
     (function () {
+      function getHytopia() {
+        return window.hytopia || (window.parent && window.parent.hytopia) || null;
+      }
+
       const audio = document.getElementById('bgm');
       const waterAudio = document.getElementById('bgm-water');
       const musicBtn = document.getElementById('music-toggle');
+      const musicStatus = document.getElementById('music-status');
+
       let musicOn = false;
+      let lastAudioUrl = '';
+      let audioUnlocked = false;
+      let audioContext = null;
 
-      musicBtn.onclick = () => {
-        musicOn = !musicOn;
-        musicBtn.innerText = `Music: ${musicOn ? 'On' : 'Off'}`;
-        if (musicOn) {
-          audio.play();
-          waterAudio.play();
-        } else {
-          audio.pause();
-          waterAudio.pause();
+      function setMusicStatus(text) {
+        if (!musicStatus) return;
+        musicStatus.textContent = text;
+      }
+
+      function mapLocalHostToTunnel(host, port) {
+        const isLocal = host === 'localhost' || host === '127.0.0.1' || host === '::1';
+        if (!isLocal) return null;
+        return `https://local.hytopiahosting.com:${port || '8080'}`;
+      }
+
+      function getSrvAssetBase() {
+        try {
+          const readSrv = (search) => {
+            if (!search) return null;
+            const params = new URLSearchParams(search);
+            return params.get('srv');
+          };
+          const srv = readSrv(window.location.search);
+          const refSrv = srv ? null : readSrv((document.referrer || '').split('?')[1] || '');
+          const raw = srv || refSrv;
+          if (!raw) return null;
+          const url = new URL(raw);
+          const tunnel = mapLocalHostToTunnel(url.hostname, url.port);
+          if (tunnel) return tunnel;
+          const protocol = url.protocol === 'wss:' ? 'https:' : 'http:';
+          return `${protocol}//${url.host}`;
+        } catch (err) {
+          return null;
         }
-      };
+      }
 
+      function getAssetBase() {
+        const api = getHytopia();
+        return (
+          (api && (api.assetsBaseUrl || api.cdnAssetsUrl || api.assetsUrl || api.cdnBaseUrl || api.gameAssetsUrl)) ||
+          window.CDN_ASSETS_URL ||
+          getSrvAssetBase() ||
+          null
+        );
+      }
 
-      const minimap = { canvas: document.getElementById('minimap'), ctx: document.getElementById('minimap').getContext('2d'), data: null };
+      // HARD FIX: Never fall back to play.hytopia.com for audio.
+      function buildAudioUrl(path) {
+        const cleanPath = String(path || '').replace(/^\/+/, '');
+        const base = getAssetBase();
+        if (!base) {
+          setMusicStatus(`Music: no asset base\n(set window.CDN_ASSETS_URL or srv=...)\npath: ${cleanPath}`);
+          return null;
+        }
+        const cleanBase = String(base).replace(/\/$/, '');
+        return `${cleanBase}/${cleanPath}`;
+      }
+
+      function setAudioSource(el, path) {
+        if (!el) return;
+        const url = buildAudioUrl(path);
+        if (!url) return;
+
+        if (el.dataset && el.dataset.audioSrc === url) return;
+
+        const source = el.querySelector ? el.querySelector('source') : null;
+        if (source) source.setAttribute('src', url);
+        else el.setAttribute('src', url);
+
+        if (el.dataset) el.dataset.audioSrc = url;
+        if (typeof el.load === 'function') el.load();
+
+        if (el.dataset && el.dataset.audioLogged !== '1') {
+          el.dataset.audioLogged = '1';
+
+          el.addEventListener('error', () => {
+            const current = el.currentSrc || (source ? source.getAttribute('src') : el.getAttribute('src'));
+            setMusicStatus(`Music: error\n${current}`);
+            console.warn('[UI] audio failed to load', current);
+          });
+
+          el.addEventListener('canplay', () => {
+            const current = el.currentSrc || (source ? source.getAttribute('src') : el.getAttribute('src'));
+            setMusicStatus(`Music: ready\n${current}`);
+            console.log('[UI] audio ready', current);
+          }, { once: true });
+        }
+
+        if (url !== lastAudioUrl) {
+          lastAudioUrl = url;
+          setMusicStatus(`Music: loading\n${url}`);
+        }
+      }
+
+      function ensureAudioSources() {
+        // Use paths relative to your CDN/base (NOT play.hytopia.com)
+        setAudioSource(audio, 'audio/sfx/background/EndlessHorizon.mp3');
+        setAudioSource(waterAudio, 'audio/sfx/background/waterswooshes.mp3');
+      }
+
+      function unlockAudio() {
+        if (audioUnlocked) return;
+        audioUnlocked = true;
+        try {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) {
+            audioContext = audioContext || new AudioCtx();
+            if (audioContext.state === 'suspended') audioContext.resume().catch(() => null);
+          }
+
+          [audio, waterAudio].forEach(el => {
+            if (!el || typeof el.play !== 'function') return;
+            el.muted = true;
+            el.volume = 1;
+            const result = el.play();
+            if (result && typeof result.catch === 'function') result.catch(() => null);
+          });
+
+          setTimeout(() => {
+            [audio, waterAudio].forEach(el => { if (el) el.muted = false; });
+          }, 0);
+        } catch (err) {
+          audioUnlocked = false;
+        }
+      }
+
+      function safePlay(el) {
+        if (!el || typeof el.play !== 'function') return;
+        ensureAudioSources();
+        unlockAudio();
+        try {
+          el.muted = false;
+          el.volume = 1;
+          const result = el.play();
+          if (result && typeof result.catch === 'function') {
+            result.catch(err => {
+              setMusicStatus('Music: blocked by browser');
+              console.warn('[UI] audio play blocked', err);
+            });
+          }
+        } catch (err) {
+          console.warn('[UI] audio play failed', err);
+        }
+      }
+
+      function safePause(el) {
+        if (!el || typeof el.pause !== 'function') return;
+        try { el.pause(); } catch (err) { console.warn('[UI] audio pause failed', err); }
+      }
+
+      function setMusic(on) {
+        musicOn = on;
+        if (musicBtn) musicBtn.innerText = `Music: ${musicOn ? 'On' : 'Off'}`;
+
+        if (musicOn) {
+          setMusicStatus('Music: starting...');
+          ensureAudioSources();
+          unlockAudio();
+          if (audio) audio.currentTime = 0;
+          if (waterAudio) waterAudio.currentTime = 0;
+          safePlay(audio);
+          safePlay(waterAudio);
+        } else {
+          setMusicStatus('Music: off');
+          safePause(audio);
+          safePause(waterAudio);
+        }
+      }
+
+      // MUSIC BUTTON: make it unstealable in capture
+      if (musicBtn) {
+        musicBtn.addEventListener('pointerdown', (e) => {
+          e.stopImmediatePropagation();
+        }, true);
+
+        musicBtn.addEventListener('click', (e) => {
+          e.stopImmediatePropagation();
+          e.stopPropagation();
+          unlockAudio();
+          setMusic(!musicOn);
+        }, true);
+      }
+
+      // keep-alive: if music is on, re-play once after first interaction
+      window.addEventListener('pointerdown', () => {
+        if (musicOn) { safePlay(audio); safePlay(waterAudio); }
+      }, { once: true });
+
+      const minimapCanvas = document.getElementById('minimap');
+      const minimapCtx = minimapCanvas && minimapCanvas.getContext ? minimapCanvas.getContext('2d') : null;
+      const minimap = { canvas: minimapCanvas, ctx: minimapCtx, data: null };
+
+      const deathScreen = document.getElementById('death-screen');
+      const deathMessage = document.getElementById('death-message');
+      let deathTimer = null;
+
+      function unwrapData(raw) {
+        if (typeof raw === 'string') {
+          try { raw = JSON.parse(raw); } catch (err) { return null; }
+        }
+        const seen = new Set();
+        let current = raw;
+        for (let i = 0; i < 4; i++) {
+          if (!current || typeof current !== 'object' || seen.has(current)) return null;
+          seen.add(current);
+          if (current.type) return current;
+          if (current.data && current.data.type) return current.data;
+          if (current.payload && current.payload.type) return current.payload;
+          current = current.data || current.payload;
+        }
+        return null;
+      }
+
+      function handleData(raw) {
+        const data = unwrapData(raw);
+        if (!data) return;
+        if (data.type === 'minimap') minimap.data = data;
+
+        if (data.type === 'swim-energy') {
+          const fill = document.getElementById('swim-bar-fill');
+          if (fill) fill.style.width = (data.value * 100) + '%';
+        }
+        if (data.type === 'coin-count') {
+          const count = document.getElementById('coin-count');
+          if (count) count.textContent = String(data.value ?? 0);
+        }
+
+        if (data.type === 'death-screen') {
+          showDeathScreen(data.message);
+        }
+
+        if (data.type === 'collect-ack') {
+          console.log('[COLLECT][UI] ACK from server', data);
+        }
+      }
+
+      function showDeathScreen(message) {
+        if (!deathScreen || !deathMessage) return;
+        deathMessage.textContent = message || 'You died.';
+        deathScreen.classList.add('active');
+        deathScreen.setAttribute('aria-hidden', 'false');
+        if (deathTimer) clearTimeout(deathTimer);
+        deathTimer = setTimeout(() => {
+          deathScreen.classList.remove('active');
+          deathScreen.setAttribute('aria-hidden', 'true');
+        }, 2400);
+      }
 
       function sendCollect(source) {
-        if (!window.hytopia) return;
-        if (typeof window.hytopia.sendData === 'function') {
-          window.hytopia.sendData({ type: 'collect', source });
-          console.log('[COLLECT][UI] click sent');
-        } else if (typeof window.hytopia.pressInput === 'function') {
-          window.hytopia.pressInput('ml', true);
-          setTimeout(() => window.hytopia.pressInput('ml', false), 0);
+        const api = getHytopia();
+        if (!api) return;
+        if (typeof api.sendData === 'function') {
+          api.sendData({ type: 'collect', source });
+        } else if (typeof api.pressInput === 'function') {
+          api.pressInput('ml', true);
+          setTimeout(() => api.pressInput('ml', false), 0);
         }
       }
 
-      function shouldIgnoreCollect(target) {
-        if (!target || typeof target.closest !== 'function') return false;
-        return !!target.closest('#music-toggle');
-      }
-
-      window.addEventListener('pointerdown', e => {
-        if (shouldIgnoreCollect(e.target)) return;
+      // Global collect handler, but ignore the music button via composedPath
+      window.addEventListener('pointerdown', (e) => {
+        const path = e.composedPath ? e.composedPath() : [];
+        if (musicBtn && path.includes(musicBtn)) return;
         sendCollect('pointer');
-      });
+      }, true);
+
+      let sweepAngle = 0;
 
       function render() {
         requestAnimationFrame(render);
-        const ctx = minimap.ctx;
-        ctx.clearRect(0, 0, 200, 200);
-        ctx.fillStyle = 'rgba(0,0,0,0.4)';
-        ctx.fillRect(0, 0, 200, 200);
+        if (!minimapCtx) return;
+
+        sweepAngle = (sweepAngle + 0.04) % (Math.PI * 2);
+
+        minimapCtx.clearRect(0, 0, 200, 200);
+
+        // Base background pulse
+        minimapCtx.fillStyle = 'rgba(0, 40, 0, 0.4)';
+        minimapCtx.beginPath();
+        minimapCtx.arc(100, 100, 100, 0, Math.PI * 2);
+        minimapCtx.fill();
+
+        // Grid Lines
+        minimapCtx.strokeStyle = 'rgba(0, 255, 0, 0.15)';
+        minimapCtx.lineWidth = 1;
+
+        // Concentric circles
+        for (let r = 25; r <= 100; r += 25) {
+          minimapCtx.beginPath();
+          minimapCtx.arc(100, 100, r, 0, Math.PI * 2);
+          minimapCtx.stroke();
+        }
+
+        // Radial lines
+        for (let a = 0; a < Math.PI * 2; a += Math.PI / 4) {
+          minimapCtx.beginPath();
+          minimapCtx.moveTo(100, 100);
+          minimapCtx.lineTo(100 + Math.cos(a) * 100, 100 + Math.sin(a) * 100);
+          minimapCtx.stroke();
+        }
+
         if (!minimap.data) return;
 
-        const center = { x: 100, y: 100 };
-        const scale = 2; // zoom
+        const range = minimap.data.range || 85;
+        const radarScale = 100 / range; // Dynamically fit any range to the 100px radius
 
-        // Player
-        ctx.fillStyle = '#0f0';
-        ctx.beginPath(); ctx.arc(100, 100, 4, 0, Math.PI * 2); ctx.fill();
+        // Draw islands (blocky)
+        if (minimap.data.islands) {
+          minimapCtx.fillStyle = 'rgba(255, 255, 255, 0.35)'; // Soft white pulse or static
+          for (const island of minimap.data.islands) {
+            const dx = (island.x - minimap.data.center.x) * radarScale;
+            const dz = (island.z - minimap.data.center.z) * radarScale;
 
-        // Drift
-        if (minimap.data.drift) {
-          ctx.strokeStyle = '#3cd2ff';
-          ctx.beginPath(); ctx.moveTo(100, 100); ctx.lineTo(100 + minimap.data.drift.x * 20, 100 + minimap.data.drift.z * 20); ctx.stroke();
+            // Draw a square for each terrain block to create the "blocky" look
+            minimapCtx.fillRect(100 + dx - radarScale / 2, 100 + dz - radarScale / 2, radarScale, radarScale);
+          }
         }
+
+        // Draw Shark
+        if (minimap.data.shark) {
+          const sx = (minimap.data.shark.x - minimap.data.center.x) * radarScale;
+          const sz = (minimap.data.shark.z - minimap.data.center.z) * radarScale;
+          if (Math.hypot(sx, sz) < 100) {
+            minimapCtx.fillStyle = '#ff4b4b'; // Distinct red for danger
+            minimapCtx.beginPath();
+            minimapCtx.arc(100 + sx, 100 + sz, 3, 0, Math.PI * 2);
+            minimapCtx.fill();
+          }
+        }
+
+        // Current (Raft/Player)
+        minimapCtx.fillStyle = '#41f34d'; // Bright green for player
+        minimapCtx.beginPath();
+        minimapCtx.arc(100, 100, 4, 0, Math.PI * 2);
+        minimapCtx.fill();
+
+        // Drift Direction
+        if (minimap.data.drift) {
+          minimapCtx.strokeStyle = '#3cd2ff';
+          minimapCtx.lineWidth = 2;
+          minimapCtx.beginPath();
+          minimapCtx.moveTo(100, 100);
+          minimapCtx.lineTo(100 + minimap.data.drift.x * 20, 100 + minimap.data.drift.z * 20);
+          minimapCtx.stroke();
+        }
+
+        // Rotating Radar Sweep
+        const sweepGradient = minimapCtx.createRadialGradient(100, 100, 0, 100, 100, 100);
+        sweepGradient.addColorStop(0, 'rgba(0, 255, 0, 0)');
+        sweepGradient.addColorStop(1, 'rgba(0, 255, 0, 0.3)');
+
+        minimapCtx.save();
+        minimapCtx.beginPath();
+        minimapCtx.moveTo(100, 100);
+        minimapCtx.arc(100, 100, 100, sweepAngle - 0.4, sweepAngle, false);
+        minimapCtx.closePath();
+
+        const g = minimapCtx.createConicGradient(sweepAngle, 100, 100);
+        g.addColorStop(0, 'rgba(0, 255, 0, 0)');
+        g.addColorStop(1, 'rgba(0, 255, 0, 0.4)');
+        minimapCtx.fillStyle = g;
+        minimapCtx.fill();
+
+        // Glowing front line of the sweep
+        minimapCtx.strokeStyle = 'rgba(100, 255, 100, 0.8)';
+        minimapCtx.lineWidth = 2;
+        minimapCtx.beginPath();
+        minimapCtx.moveTo(100, 100);
+        minimapCtx.lineTo(100 + Math.cos(sweepAngle) * 100, 100 + Math.sin(sweepAngle) * 100);
+        minimapCtx.stroke();
+        minimapCtx.restore();
       }
       render();
 
-      window.addEventListener('message', e => {
-        if (e.data.type === 'minimap') minimap.data = e.data;
-        if (e.data.type === 'swim-energy') {
-          document.getElementById('swim-bar-fill').style.width = (e.data.value * 100) + '%';
-        }
-        if (e.data?.type === 'collect-ack') {
-          console.log('[COLLECT][UI] ACK from server', e.data);
-        }
-      });
+      function setupDataListener() {
+        const api = getHytopia();
+        if (api) {
+          if (typeof api.onData === 'function') api.onData(handleData);
+          else api.onData = handleData;
 
-      setInterval(() => { if (window.hytopia) hytopia.sendData({ type: 'ui-ready' }); }, 2000);
+          if (typeof api.onMessage === 'function') api.onMessage(handleData);
+          else if ('onMessage' in api) api.onMessage = handleData;
+        } else {
+          setTimeout(setupDataListener, 200);
+        }
+      }
+      setupDataListener();
+
+      window.addEventListener('message', (e) => handleData(e.data));
+
+      setInterval(() => {
+        const api = getHytopia();
+        if (api && typeof api.sendData === 'function') {
+          api.sendData({ type: 'ui-ready' });
+        }
+      }, 2000);
+
+      // show what base we resolved (helps instantly)
+      setMusicStatus(`Music: idle\nassetBase: ${getAssetBase() || '(null)'}`);
+
+      // COIN ANIMATION
+      const coinContainer = document.getElementById('coin-animate-container');
+      const coinFrames = [];
+      const totalFrames = 12; // Adjusted to match files found
+      let currentFrame = 0;
+
+      function initCoinFrames() {
+        if (!coinContainer) return;
+        const base = getAssetBase();
+        const baseUrl = base ? base.replace(/\/$/, '') : '';
+
+        for (let i = 2; i <= 13; i++) {
+          const img = document.createElement('img');
+          img.className = 'coin-frame';
+          // Using path assets/icons/animated/coinX@2x.png
+          img.src = `${baseUrl}/icons/animated/coin${i}@2x.png`;
+          coinContainer.appendChild(img);
+          coinFrames.push(img);
+        }
+        if (coinFrames[0]) coinFrames[0].classList.add('active');
+      }
+
+      function animateCoin() {
+        if (coinFrames.length === 0) return;
+        coinFrames[currentFrame].classList.remove('active');
+        currentFrame = (currentFrame + 1) % coinFrames.length;
+        coinFrames[currentFrame].classList.add('active');
+      }
+
+      initCoinFrames();
+      setInterval(animateCoin, 80); // ~12fps animation
     })();
   </script>
 </body>

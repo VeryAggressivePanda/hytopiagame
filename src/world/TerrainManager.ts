@@ -1,7 +1,7 @@
 import { World, Entity } from 'hytopia';
 import { WATER_LEVEL, BUBBLE_RADIUS, BANK_SEG_LEN, ZONE_LEN, ZONE_BLEND, ISLAND_MIN_DISTANCE } from '../config/settings';
 import { SAND_BLOCK_ID } from '../config/blocks';
-import { rand2, noise2D, smoothstep, lerp, computeHull, quatYawPitch } from '../utils/math';
+import { rand2, noise2D, smoothstep, lerp, computeHull, quatYawPitch, fbm } from '../utils/math';
 import { pickWaterBlock } from '../config/blocks';
 
 export type ZoneType = 'twisty' | 'opensea';
@@ -56,22 +56,6 @@ export class TerrainManager {
             if (!spawned) {
                 spawned = new Set<string>();
                 this.bankSpawnedBlocks.set(plan.key, spawned);
-            }
-
-            if (plan.zoneType === 'opensea') {
-                if (spawned.size > 0) {
-                    for (const fullKey of Array.from(spawned)) {
-                        const [x, y, z] = fullKey.split(',').map(Number);
-                        const key2D = `${x},${z}`;
-                        this.islandBaseKeys.delete(key2D);
-                        const dist = Math.hypot(x - center.x, z - center.z);
-                        const waterId = pickWaterBlock(dist);
-                        this.world.chunkLattice.setBlock({ x, y, z }, waterId);
-                        activeWater.set(key2D, waterId);
-                        spawned.delete(fullKey);
-                    }
-                }
-                continue;
             }
 
             for (const b of plan.blocks) {
@@ -130,55 +114,82 @@ export class TerrainManager {
         }
     }
 
+    private getTerrainDensity(wx: number, wz: number, pathOffset: number, zoneType: ZoneType): number {
+        const rx = wx - this.channelOrigin.x;
+        const rz = wz - this.channelOrigin.z;
+        const l = rx * this.channelPerp.x + rz * this.channelPerp.z;
+        const l_relative = l - pathOffset;
+
+        // 1. True Global Fractal Noise (reduced octaves for performance)
+        let rawNoise = fbm(wx * 0.015, wz * 0.015, 4);
+
+        // 2. Base Threshold (Shifted for opensea)
+        const baseThreshold = zoneType === 'opensea' ? 0.53 : 0.43;
+
+        // 3. High-Contrast Transform (Cellular/Blobby look)
+        let density = smoothstep((rawNoise - baseThreshold) / 0.1);
+
+        // 4. Robust River Mask (keeps a narrow central channel clear for the raft)
+        const riverClearPath = 5;
+        const riverMask = smoothstep((Math.abs(l_relative) - riverClearPath) / 8);
+
+        return density * riverMask;
+    }
+
     private ensureBankPlansAround(center: { x: number; z: number }) {
         const rx = center.x - this.channelOrigin.x;
         const rz = center.z - this.channelOrigin.z;
         const centerT = rx * this.channelForward.x + rz * this.channelForward.z;
 
-        const LAND_INNER = 12;
-        const LAND_OUTER = 18;
         const SEG_LEN = BANK_SEG_LEN;
-        const GAP_BLOCKS = 20;
-        const gapSegs = Math.ceil(GAP_BLOCKS / SEG_LEN);
-        const PLAN_RANGE = BUBBLE_RADIUS + 30;
+        const PLAN_RANGE = 75; // Reduced from 110 for performance
 
         const startSeg = Math.floor((centerT - PLAN_RANGE) / SEG_LEN);
         const endSeg = Math.ceil((centerT + PLAN_RANGE) / SEG_LEN);
 
         for (let segIdx = startSeg; segIdx <= endSeg; segIdx++) {
-            if (this.hasMidPlanNear(segIdx, gapSegs)) continue;
             for (const side of ['L', 'R'] as const) {
                 const key = `${segIdx}:${side}`;
                 if (this.bankPlans.has(key)) continue;
 
-                const segStart = segIdx * SEG_LEN;
-                const segEnd = segStart + SEG_LEN;
-                const segMid = (segStart + segEnd) * 0.5;
+                const segMid = (segIdx + 0.5) * SEG_LEN;
                 const zoneType = this.zoneForSeg(Math.floor(segMid / ZONE_LEN));
 
                 const blocks: { x: number; y: number; z: number }[] = [];
-                const widthBase = LAND_OUTER - LAND_INNER;
-                const amp = 4;
-                const phaseBase = segIdx * 0.6 + (side === 'L' ? 0 : Math.PI);
-                const OUTER_PAD = 8;
+                // Widened scan to handle the intense winding path (up to 75 units out)
+                const innerScan = 0;
+                const outerScan = 75;
+                const innerLimit = 5; // Absolute minimum distance from centerline for banks
 
-                for (let t = Math.floor(segStart); t <= Math.ceil(segEnd); t++) {
-                    const s = Math.sin(t * 0.15 + phaseBase);
-                    const bandCenter = (LAND_INNER + LAND_OUTER) * 0.5 + s * amp;
-                    const width = widthBase + Math.cos(t * 0.1 + phaseBase * 0.7) * 2;
-                    const lStart = Math.max(1, bandCenter - width * 0.5);
-                    const lEnd = bandCenter + width * 0.5 + OUTER_PAD;
-                    for (let l = Math.floor(lStart); l <= Math.ceil(lEnd); l++) {
-                        const signedL = side === 'L' ? l : -l;
-                        const wx = this.channelOrigin.x + this.channelForward.x * t + this.channelPerp.x * signedL;
-                        const wz = this.channelOrigin.z + this.channelForward.z * t + this.channelPerp.z * signedL;
-                        blocks.push({ x: Math.round(wx), y: WATER_LEVEL, z: Math.round(wz) });
+                for (let dt = 0; dt < SEG_LEN; dt++) {
+                    const t = segIdx * SEG_LEN + dt;
+
+                    // Pre-calculate path offset once per row
+                    const pathWiggle = fbm(t * 0.012, 123.456, 3) - 0.5;
+                    const pathOffset = pathWiggle * 50.0;
+
+                    for (let lRel = innerScan; lRel <= outerScan; lRel++) {
+                        const l = side === 'L' ? lRel : -lRel;
+                        // Skip if it's too close to the absolute center, let midScan handle that
+                        if (Math.abs(l) < innerLimit) continue;
+
+                        const wx = Math.round(this.channelOrigin.x + this.channelForward.x * t + this.channelPerp.x * l);
+                        const wz = Math.round(this.channelOrigin.z + this.channelForward.z * t + this.channelPerp.z * l);
+
+                        const d = this.getTerrainDensity(wx, wz, pathOffset, zoneType);
+                        if (d > 0.05) {
+                            blocks.push({ x: wx, y: WATER_LEVEL, z: wz });
+                        }
                     }
                 }
 
-                const uniq = new Map<string, { x: number; y: number; z: number }>();
-                for (const b of blocks) { uniq.set(`${b.x},${b.y},${b.z}`, b); }
-                this.bankPlans.set(key, { key, blocks: Array.from(uniq.values()), zoneType });
+                if (blocks.length > 0) {
+                    const uniq = new Map<string, { x: number; y: number; z: number }>();
+                    for (const b of blocks) { uniq.set(`${b.x},${b.y},${b.z}`, b); }
+                    this.bankPlans.set(key, { key, blocks: Array.from(uniq.values()), zoneType });
+                } else {
+                    this.bankPlans.set(key, { key, blocks: [], zoneType });
+                }
             }
         }
     }
@@ -189,9 +200,7 @@ export class TerrainManager {
         const centerT = rx * this.channelForward.x + rz * this.channelForward.z;
 
         const SEG_LEN = BANK_SEG_LEN;
-        const GAP_BLOCKS = 20;
-        const gapSegs = Math.ceil(GAP_BLOCKS / SEG_LEN);
-        const PLAN_RANGE = BUBBLE_RADIUS + 30;
+        const PLAN_RANGE = 75; // Reduced from 110 for performance
 
         const startSeg = Math.floor((centerT - PLAN_RANGE) / SEG_LEN);
         const endSeg = Math.ceil((centerT + PLAN_RANGE) / SEG_LEN);
@@ -199,52 +208,46 @@ export class TerrainManager {
         for (let segIdx = startSeg; segIdx <= endSeg; segIdx++) {
             const key = `mid:${segIdx}`;
             if (this.midPlans.has(key)) continue;
-            if (this.hasBankPlanNear(segIdx, gapSegs)) continue;
 
-            const spawnNoise = noise2D(segIdx * 3.17, 441.92);
-            if (spawnNoise < 0.55) continue;
-
-            const segStart = segIdx * SEG_LEN;
-            const segEnd = segStart + SEG_LEN;
-            const segMid = (segStart + segEnd) * 0.5;
+            const segMid = (segIdx + 0.5) * SEG_LEN;
+            const zoneType = this.zoneForSeg(Math.floor(segMid / ZONE_LEN));
 
             const blocks: { x: number; y: number; z: number }[] = [];
-            const BANK_INNER = 12;
-            const MIN_WATER_GAP = 4;
-            const length = 10 + Math.round((noise2D(segIdx * 6.1, 72.7) + 1) * 0.5 * 8);
-            const halfLen = length * 0.5;
-            const baseWidth = 1.5 + (noise2D(segIdx * 9.3, 12.2) + 1) * 0.5 * 1.5;
-            const baseOffset = noise2D(segIdx * 7.7, 19.3) * 2.0;
+            // Middle scan: widened to handle full potential path drift range (+/- 25 + margin)
+            const midScanWidth = 35;
 
-            for (let dt = -halfLen; dt <= halfLen; dt += 1) {
-                const t = segMid + dt;
-                const edge = 1 - Math.min(1, Math.abs(dt) / halfLen);
-                const widthNoise = noise2D(segIdx * 13.3, t * 0.2);
-                const width = baseWidth * (0.5 + 0.5 * widthNoise) * (0.35 + 0.65 * edge);
-                const widthCells = Math.max(1, Math.round(width));
-                let lateralWiggle = baseOffset + noise2D(segIdx * 5.9, t * 0.18) * 1.2;
-                const maxCenter = Math.max(0, BANK_INNER - MIN_WATER_GAP - widthCells);
-                lateralWiggle = Math.max(-maxCenter, Math.min(maxCenter, lateralWiggle));
+            for (let dt = 0; dt < SEG_LEN; dt++) {
+                const t = segIdx * SEG_LEN + dt;
 
-                const centerX = this.channelOrigin.x + this.channelForward.x * t + this.channelPerp.x * lateralWiggle;
-                const centerZ = this.channelOrigin.z + this.channelForward.z * t + this.channelPerp.z * lateralWiggle;
+                // Pre-calculate path offset once per row
+                const pathWiggle = fbm(t * 0.012, 123.456, 3) - 0.5;
+                const pathOffset = pathWiggle * 50.0;
 
-                for (let l = -widthCells; l <= widthCells; l++) {
-                    const wx = Math.round(centerX + this.channelPerp.x * l);
-                    const wz = Math.round(centerZ + this.channelPerp.z * l);
-                    blocks.push({ x: wx, y: WATER_LEVEL, z: wz });
+                for (let l = -midScanWidth; l <= midScanWidth; l++) {
+                    const wx = Math.round(this.channelOrigin.x + this.channelForward.x * t + this.channelPerp.x * l);
+                    const wz = Math.round(this.channelOrigin.z + this.channelForward.z * t + this.channelPerp.z * l);
+
+                    const d = this.getTerrainDensity(wx, wz, pathOffset, zoneType);
+                    // Mid islands use their own density check if needed
+                    if (d > 0.2) {
+                        blocks.push({ x: wx, y: WATER_LEVEL, z: wz });
+                    }
                 }
             }
 
-            const uniq = new Map<string, { x: number; y: number; z: number }>();
-            for (const b of blocks) { uniq.set(`${b.x},${b.y},${b.z}`, b); }
-            this.midPlans.set(key, { key, blocks: Array.from(uniq.values()) });
+            if (blocks.length > 0) {
+                const uniq = new Map<string, { x: number; y: number; z: number }>();
+                for (const b of blocks) { uniq.set(`${b.x},${b.y},${b.z}`, b); }
+                this.midPlans.set(key, { key, blocks: Array.from(uniq.values()), zoneType });
+            } else {
+                this.midPlans.set(key, { key, blocks: [], zoneType });
+            }
         }
     }
 
     private zoneForSeg(segIdx: number): ZoneType {
-        const n = noise2D(segIdx * 7.17, 999.123);
-        return n > 0.55 ? 'opensea' : 'twisty';
+        const n = fbm(segIdx * 0.3, 999.1, 2);
+        return n > 0.65 ? 'opensea' : 'twisty';
     }
 
     private hasMidPlanNear(segIdx: number, gapSegs: number) {
@@ -258,6 +261,25 @@ export class TerrainManager {
         for (let s = segIdx - gapSegs; s <= segIdx + gapSegs; s++) {
             if (this.bankPlans.has(`${s}:L`) || this.bankPlans.has(`${s}:R`)) return true;
         }
-        return false;
+    }
+
+    public getIslandPlanBlocks(center: { x: number, z: number }, range: number): { x: number, z: number }[] {
+        const blocks2D: { x: number, z: number }[] = [];
+        const rangeSq = range * range;
+
+        const checkPlan = (plan: any) => {
+            for (const b of plan.blocks) {
+                const dx = b.x - center.x;
+                const dz = b.z - center.z;
+                if (dx * dx + dz * dz <= rangeSq) {
+                    blocks2D.push({ x: b.x, z: b.z });
+                }
+            }
+        };
+
+        for (const plan of this.bankPlans.values()) checkPlan(plan);
+        for (const plan of this.midPlans.values()) checkPlan(plan);
+
+        return blocks2D;
     }
 }

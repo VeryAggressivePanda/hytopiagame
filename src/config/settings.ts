@@ -1,6 +1,7 @@
 export const WATER_LEVEL = 5;
 export const BUBBLE_RADIUS = 15;
 export const TICK_DELTA = 1 / 20;
+export const RADAR_RANGE = 45; // Easy to adjust centrally
 
 export const PHYSICS_SETTINGS = {
     targetHeight: 0.5,

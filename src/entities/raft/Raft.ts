@@ -111,6 +111,13 @@ export class Raft {
     return this.visualBlocks;
   }
 
+  public getBeamEdges(): { min: number; max: number } | null {
+    if (this.state.beamPositions.length === 0) return null;
+    const min = Math.min(...this.state.beamPositions);
+    const max = Math.max(...this.state.beamPositions);
+    return { min, max };
+  }
+
   public collectFloatingBeam(beam: Entity, collectorLocalOffset?: { x: number; y: number; z: number } | null): boolean {
     return collectFloatingBeamFromState(this.state, this.world, beam, collectorLocalOffset);
   }

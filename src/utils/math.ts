@@ -1,9 +1,42 @@
-export const noise2D = (i: number, j: number) => {
-    const s = Math.sin(i * 127.1 + j * 311.7 + 0.12345) * 43758.5453123;
-    return s - Math.floor(s);
+export const noise2D = (x: number, y: number) => {
+    const i = Math.floor(x);
+    const j = Math.floor(y);
+    const fx = x - i;
+    const fy = y - j;
+
+    const hash = (rx: number, ry: number) => {
+        const s = Math.sin(rx * 127.1 + ry * 311.7) * 43758.5453123;
+        return s - Math.floor(s);
+    };
+
+    const a = hash(i, j);
+    const b = hash(i + 1, j);
+    const c = hash(i, j + 1);
+    const d = hash(i + 1, j + 1);
+
+    // Hermite interpolation (smoother than linear)
+    const ux = fx * fx * (3 - 2 * fx);
+    const uy = fy * fy * (3 - 2 * fy);
+
+    return lerp(lerp(a, b, ux), lerp(c, d, ux), uy);
 };
 
-export const rand2 = (x: number, z: number, salt = 0) => noise2D(x * 3.1 + salt, z * 3.3 - salt);
+export const fbm = (x: number, y: number, octaves = 4) => {
+    let value = 0;
+    let amplitude = 0.5;
+    let frequency = 1;
+    for (let i = 0; i < octaves; i++) {
+        value += amplitude * noise2D(x * frequency, y * frequency);
+        amplitude *= 0.5;
+        frequency *= 2;
+    }
+    return value;
+};
+
+export const rand2 = (x: number, z: number, salt = 0) => {
+    const s = Math.sin(x * 12.9898 + z * 78.233 + salt) * 43758.5453;
+    return s - Math.floor(s);
+};
 
 export const quatYawPitch = (yaw: number, pitch: number) => {
     const cy = Math.cos(yaw / 2);

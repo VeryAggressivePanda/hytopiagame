@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>GLTF Render</title>
+    <style>
+      html, body { margin: 0; padding: 0; background: transparent; overflow: hidden; }
+      canvas { display: block; }
+    </style>
+  </head>
+  <body>
+    <!-- SCRIPT_SRC_THREE -->
+    <!-- SCRIPT_SRC_GLTF -->
+    <script>
+      async function renderFrames(modelUrl, frameCount, size) {
+        const renderer = new THREE.WebGLRenderer({
+          antialias: true,
+          alpha: true,
+          preserveDrawingBuffer: true,
+        });
+        renderer.setSize(size, size, false);
+        renderer.setClearColor(0x000000, 0);
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        document.body.appendChild(renderer.domElement);
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(35, 1, 0.01, 100);
+        const ambient = new THREE.AmbientLight(0xffffff, 0.8);
+        scene.add(ambient);
+        const dir = new THREE.DirectionalLight(0xffffff, 0.9);
+        dir.position.set(2, 3, 4);
+        scene.add(dir);
+
+        const loader = new THREE.GLTFLoader();
+        const gltf = await new Promise((resolve, reject) => {
+          loader.load(modelUrl, resolve, undefined, reject);
+        });
+        const model = gltf.scene;
+        scene.add(model);
+
+        const bounds = new THREE.Box3().setFromObject(model);
+        const center = bounds.getCenter(new THREE.Vector3());
+        model.position.sub(center);
+
+        const sphere = bounds.getBoundingSphere(new THREE.Sphere());
+        const radius = sphere.radius || 1;
+        camera.position.set(0, 0, radius * 2.4);
+        camera.lookAt(0, 0, 0);
+
+        const frames = [];
+        for (let i = 0; i < frameCount; i += 1) {
+          const t = (i / frameCount) * Math.PI * 2;
+          model.rotation.y = t;
+          renderer.render(scene, camera);
+          frames.push(renderer.domElement.toDataURL('image/png'));
+        }
+
+        return frames;
+      }
+
+      window.renderFrames = renderFrames;
+    </script>
+  </body>
+</html>

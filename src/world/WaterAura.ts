@@ -1,13 +1,19 @@
 import { World } from 'hytopia';
 import { BUBBLE_RADIUS, WATER_LEVEL } from '../config/settings';
 import { WATER_BLOCK_ID, WATER_BRIGHT_BLOCK_ID, WATER_MEDIUM_BLOCK_ID, WATER_SKY_BLOCK_ID, pickWaterBlock } from '../config/blocks';
+import { noise2D } from '../utils/math';
 
 export class WaterAura {
-    private activeWater = new Map<string, number>();
+    public activeWater = new Map<string, number>();
 
     constructor(private world: World) { }
 
-    public update(center: { x: number; z: number }, isIslandBase: (x: number, z: number) => boolean) {
+    public update(
+        center: { x: number; z: number },
+        isIslandBase: (x: number, z: number) => boolean,
+        raftInfo?: { pos: { x: number; y: number; z: number }, rot: { x: number; y: number; z: number; w: number }, width: number, speed: number },
+        tick?: number
+    ) {
         // Cull outside
         for (const [key] of this.activeWater) {
             const [x, z] = key.split(',').map(Number);
@@ -27,8 +33,42 @@ export class WaterAura {
                 if (isIslandBase(x, z)) continue;
                 const dist = Math.hypot(x - center.x, z - center.z);
                 if (dist > BUBBLE_RADIUS) continue;
+
                 const key = `${x},${z}`;
-                const target = pickWaterBlock(dist);
+                let target = pickWaterBlock(dist);
+
+                // Subtle blue wake trail logic
+                if (raftInfo && raftInfo.speed > 0.5) {
+                    const dx = x - raftInfo.pos.x;
+                    const dz = z - raftInfo.pos.z;
+                    const q = raftInfo.rot;
+
+                    const tx = 2 * (q.y * dz - q.z * 0);
+                    const ty = 2 * (q.z * dx - q.x * dz);
+                    const tz = 2 * (q.x * 0 - q.y * dx);
+
+                    const localX = dx + (-q.w * tx + (q.y * tz - q.z * ty));
+                    const localZ = dz + (-q.w * tz + (q.x * ty - q.y * tx));
+
+                    const trailLength = Math.max(0, raftInfo.speed * 1.8);
+                    const rearOffset = 2.0;
+                    if (localZ > rearOffset && localZ < trailLength + rearOffset) {
+                        const spreadFactor = 0.22;
+                        const halfWidth = (raftInfo.width / 2) + (localZ - rearOffset) * spreadFactor;
+                        if (Math.abs(localX) < halfWidth) {
+                            const slowTime = Math.floor((tick || 0) / 12);
+                            const hash = noise2D(x + slowTime * 0.1, z + slowTime * 0.1);
+
+                            // Use subtle blue variations instead of bright white
+                            if (hash > 0.65) {
+                                target = WATER_MEDIUM_BLOCK_ID; // Subtle blue ripple
+                            } else if (hash > 0.3) {
+                                target = WATER_SKY_BLOCK_ID; // Slightly lighter shimmer
+                            }
+                        }
+                    }
+                }
+
                 if (this.activeWater.get(key) !== target) {
                     this.world.chunkLattice.setBlock({ x, y: WATER_LEVEL, z }, target);
                     this.activeWater.set(key, target);
